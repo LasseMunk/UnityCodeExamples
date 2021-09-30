@@ -1,8 +1,13 @@
+using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
+using System;
 
 [RequireComponent(typeof(LineRenderer))]
 public class LineSegments : MonoBehaviour
 {
+  public event Action OnLineSegmentsUpdated;
+
   [SerializeField] RaycastSelect raycastSelect;
   BoxCollider _thisBoxCollider;
 
@@ -28,6 +33,7 @@ public class LineSegments : MonoBehaviour
   {
     _line.useWorldSpace = false;
     UpdateLineSegments(_segments, _radius);
+
   }
 
   void OnValidate()
@@ -86,5 +92,20 @@ public class LineSegments : MonoBehaviour
 
       angleOfRotation += (360f / segments);
     }
+
+    OnLineSegmentsUpdated?.Invoke();
+  }
+
+  public LineRenderer GetLineRenderer()
+  {
+    return _line;
+  }
+
+  public Vector3[] GetLineRendererPositions()
+  {
+    Vector3[] positions = new Vector3[_line.positionCount];
+    _line.GetPositions(positions);
+
+    return positions;
   }
 }
