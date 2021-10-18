@@ -6,79 +6,85 @@ using UnityEngine;
 public class TimelineAnimation : MonoBehaviour
 {
   LineSegments _lineSegments;
-  Coroutine _lineAnimation;
+  int _linePositionIndex = 0;
+  Vector3[] _linePositions;
+  float _lineSegmentTimelinePosition = 0f;
 
-  [SerializeField] float _beatsPrMinute = 120;
-  [SerializeField] float _beatsPrSecond;
-  [SerializeField] float _beatsPrLineSegment = 0.125f;
-  [SerializeField] float _timePrLineSegment;
-  [SerializeField] float _animationVelocity;
+  Vector3 _transformOffset;
+
+  [SerializeField] Transport _transport;
+  [SerializeField] float _beatsPrLineSegment = 0.5f;
+  float _timePrLineSegment;
+  float _beatsPrSecond;
 
   void Awake()
   {
     _lineSegments = transform.parent.GetComponent<LineSegments>();
   }
+  void Start()
+  {
+    _transformOffset = transform.parent.transform.position;
+  }
 
   void OnEnable()
   {
-    _lineSegments.OnLineSegmentsUpdated += StartAnimatingTimeline;
+    _lineSegments.OnLineSegmentsUpdated += UpdateLineRendererPositions;
+    _transport.OnBPMChanged += SetBeatsPrSecond;
+    _transport.OnBPMChanged += SetTimePrLineSegment;
   }
   void OnDisable()
   {
-    _lineSegments.OnLineSegmentsUpdated -= StartAnimatingTimeline;
-  }
-  void Start()
-  {
-    CalculateAnimationVelocity();
-  }
-  void OnValidate()
-  {
-    CalculateAnimationVelocity();
-  }
-  void CalculateAnimationVelocity()
-  {
-    _beatsPrSecond = CalculateBeatsPrSecond(_beatsPrMinute);
-    _timePrLineSegment = CalculateTimePrLineSegment(_beatsPrSecond);
-  }
-  float CalculateBeatsPrSecond(float beatsPrMinute) { return (beatsPrMinute / 60); }
-  float CalculateTimePrLineSegment(float beatsPrSecond) { return (_beatsPrLineSegment / beatsPrSecond); }
-
-  [ContextMenu("StartAnimatingTimeline")]
-  void StartAnimatingTimeline()
-  {
-    if (_lineAnimation != null) StopCoroutine(_lineAnimation);
-    _lineAnimation = StartCoroutine(AnimateLineSegments());
+    _lineSegments.OnLineSegmentsUpdated -= UpdateLineRendererPositions;
+    _transport.OnBPMChanged -= SetBeatsPrSecond;
+    _transport.OnBPMChanged -= SetTimePrLineSegment;
   }
 
-  IEnumerator AnimateLineSegments()
+  void Update()
   {
-    Vector3[] linePositions = _lineSegments.GetLineRendererPositions();
-
-    Vector3 timelinePosition = new Vector3();
-    int linePositionIndex = 0;
-    float lineSegmentPosition = 0f;
-    bool animationIsFinished = false;
-    bool continueToNextLineSegment;
-
-
-    while (!animationIsFinished)
+    if (_linePositions != null)
     {
-      timelinePosition = Vector3.Lerp(linePositions[linePositionIndex], linePositions[linePositionIndex + 1], lineSegmentPosition);
-
-      lineSegmentPosition += _timePrLineSegment * Time.deltaTime;
-      transform.position = timelinePosition;
-
-      continueToNextLineSegment = (timelinePosition == linePositions[linePositionIndex + 1]) ? true : false;
-
-      if (continueToNextLineSegment)
-      {
-        animationIsFinished = (timelinePosition == linePositions[linePositions.Length - 1]) ? true : false;
-
-        linePositionIndex++;
-        lineSegmentPosition = 0f;
-      }
-
-      yield return null;
+      AnimateLineSegments();
     }
   }
+
+  void SetBeatsPrSecond(float beatsPrSecond)
+  {
+    _beatsPrSecond = beatsPrSecond;
+  }
+
+  void SetTimePrLineSegment(float beatsPrSecond)
+  {
+    _timePrLineSegment = (_beatsPrLineSegment / beatsPrSecond);
+  }
+
+  void UpdateLineRendererPositions(Vector3[] lineRendererPositions)
+  {
+    _linePositions = lineRendererPositions;
+
+    SetTimePrLineSegment(_beatsPrSecond);
+  }
+
+  void AnimateLineSegments()
+  {
+
+    Vector3 timelinePosition = new Vector3();
+    bool continueToNextLineSegment;
+    int nextLinePositionIndex = (_linePositionIndex + 1) % _linePositions.Length;
+
+    timelinePosition = Vector3.Lerp(_linePositions[_linePositionIndex] + _transformOffset, _linePositions[nextLinePositionIndex] + _transformOffset, _lineSegmentTimelinePosition);
+
+    _lineSegmentTimelinePosition += Time.deltaTime / _timePrLineSegment;
+    transform.position = timelinePosition;
+
+    continueToNextLineSegment = (timelinePosition == _linePositions[nextLinePositionIndex] + _transformOffset) ? true : false;
+
+    if (continueToNextLineSegment)
+    {
+      _linePositionIndex = (_linePositionIndex + 1) % _linePositions.Length;
+      _lineSegmentTimelinePosition = 0f;
+    }
+  }
+
+  public float GetTimePrLineSegment() { return _timePrLineSegment; }
+  public int GetNumberOfLineSegments() { return _linePositions.Length; }
 }

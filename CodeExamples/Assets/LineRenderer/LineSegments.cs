@@ -6,7 +6,7 @@ using System;
 [RequireComponent(typeof(LineRenderer))]
 public class LineSegments : MonoBehaviour
 {
-  public event Action OnLineSegmentsUpdated;
+  public event Action<Vector3[]> OnLineSegmentsUpdated;
 
   [SerializeField] RaycastSelect raycastSelect;
   BoxCollider _thisBoxCollider;
@@ -26,14 +26,21 @@ public class LineSegments : MonoBehaviour
     if (raycastSelect != null)
       _line = gameObject.GetComponent<LineRenderer>();
 
+  }
+
+  void OnEnable()
+  {
     raycastSelect.OnRaycastObjectHit += ConvertRaycastHitPointToLineSegments;
+  }
+  void OnDisable()
+  {
+    raycastSelect.OnRaycastObjectHit -= ConvertRaycastHitPointToLineSegments;
   }
 
   void Start()
   {
     _line.useWorldSpace = false;
     UpdateLineSegments(_segments, _radius);
-
   }
 
   void OnValidate()
@@ -59,20 +66,24 @@ public class LineSegments : MonoBehaviour
     UpdateLineSegments(_segments, _radius);
   }
 
+  public float GetRadius() { return _radius; }
+
   void ConvertRaycastHitPointToLineSegments(RaycastHit raycastHit)
   {
-    float yHitPosition = raycastHit.transform.InverseTransformPoint(raycastHit.point).y;
-    float yHitPositionWithOffset = yHitPosition + (_thisBoxCollider.size.y / 2);
-    float relativeHitPosition = (yHitPositionWithOffset / _thisBoxCollider.size.y);
+    if (raycastHit.collider == _thisBoxCollider)
+    {
+      float yHitPosition = raycastHit.transform.InverseTransformPoint(raycastHit.point).y;
+      float yHitPositionWithOffset = yHitPosition + (_thisBoxCollider.size.y / 2);
+      float relativeHitPosition = (yHitPositionWithOffset / _thisBoxCollider.size.y);
 
-    int newLineSegmentCount = (int)(maxSegments * relativeHitPosition);
+      int newLineSegmentCount = (int)(maxSegments * relativeHitPosition);
 
-    SetNumberOfLineSegments(newLineSegmentCount);
+      SetNumberOfLineSegments(newLineSegmentCount);
+    }
   }
 
   void UpdateLineSegments(int segments, float radius)
   {
-
     if (_line == null) return;
 
     _line.positionCount = segments + 1;
@@ -86,6 +97,7 @@ public class LineSegments : MonoBehaviour
     for (int i = 0; i < (segments + 1); i++)
     {
       x = Mathf.Sin(Mathf.Deg2Rad * angleOfRotation) * radius;
+
       y = Mathf.Cos(Mathf.Deg2Rad * angleOfRotation) * radius;
 
       _line.SetPosition(i, new Vector3(x, y, z));
@@ -93,7 +105,7 @@ public class LineSegments : MonoBehaviour
       angleOfRotation += (360f / segments);
     }
 
-    OnLineSegmentsUpdated?.Invoke();
+    OnLineSegmentsUpdated?.Invoke(GetLineRendererPositions());
   }
 
   public LineRenderer GetLineRenderer()
@@ -101,7 +113,7 @@ public class LineSegments : MonoBehaviour
     return _line;
   }
 
-  public Vector3[] GetLineRendererPositions()
+  Vector3[] GetLineRendererPositions()
   {
     Vector3[] positions = new Vector3[_line.positionCount];
     _line.GetPositions(positions);
