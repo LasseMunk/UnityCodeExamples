@@ -5,8 +5,8 @@ namespace FiniteStateMachine
 {
     public class State1 : State
     {
-
-        public State1(GameManager gameManager) : base(gameManager)
+        
+        public State1(StateMachine stateMachine) : base(stateMachine)
         {
             // information from GameManager
         }

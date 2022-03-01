@@ -4,10 +4,11 @@ using UnityEngine;
 namespace FiniteStateMachine
 {
 public class State2 : State
-    {
-        public State2(GameManager gameManager) : base(gameManager)
+{
+    public State2(StateMachine stateMachine) : base(stateMachine)
         {
             // information from GameManager
+          
         }
         
         public override IEnumerator Start()

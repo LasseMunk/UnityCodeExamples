@@ -10,12 +10,12 @@ namespace  FiniteStateMachine
         // if each state needs information from UsingTheStateMachine
         // then implement in each state
         // protected means deriving classes can access
-        protected GameManager gameManager;
+        protected StateMachine stateMachine;
 
-        public State(GameManager gm)
+        public State(StateMachine gm)
         {
             // enables each state to reference the state machine
-            gameManager = gm;
+            stateMachine = gm;
         }
         
         public virtual IEnumerator Start()
