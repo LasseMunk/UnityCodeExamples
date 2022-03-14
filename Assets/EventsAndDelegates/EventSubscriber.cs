@@ -1,5 +1,6 @@
 // https://www.youtube.com/watch?v=3ZfwqWl-YI0&t=0s&ab_channel=CodeMonkey
 
+using System;
 using UnityEngine;
 
 public class EventSubscriber : MonoBehaviour
@@ -7,11 +8,18 @@ public class EventSubscriber : MonoBehaviour
 
   [SerializeField] private EventEmitter eventEmitter;
 
-  void Start()
+  void OnEnable()
   {
     eventEmitter.OnSpacebarPressed += LogOnSpacePressed;
     eventEmitter.OnAkeyPressed += LogOnAkeyPressed;
     eventEmitter.OnDkeyPressed += LogOnDkeyPressed;
+  }
+
+  private void OnDisable()
+  {
+    eventEmitter.OnSpacebarPressed -= LogOnSpacePressed;
+    eventEmitter.OnAkeyPressed -= LogOnAkeyPressed;
+    eventEmitter.OnDkeyPressed -= LogOnDkeyPressed;
   }
 
   private void LogOnAkeyPressed(int i, bool b)
