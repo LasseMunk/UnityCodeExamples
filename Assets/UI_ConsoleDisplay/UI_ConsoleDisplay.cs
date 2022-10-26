@@ -26,6 +26,9 @@ public class UI_ConsoleDisplay : MonoBehaviour
         // stacktrace
         // type of log received. E.g. a log, error, exception etc.
 
+        if(debugLogs.Count >= 13) debugLogs = new Dictionary<string, string>(); // better to count using an int but im lazy
+        
+        
         if (type == LogType.Log)
         {
             string[] splitString = logString.Split(char.Parse(":")); // split the logstring using : as separator
